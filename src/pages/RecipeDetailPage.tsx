@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import ConfirmDialog from '../components/ConfirmDialog'
 import EmptyState from '../components/EmptyState'
 import ErrorMessage from '../components/ErrorMessage'
 import Spinner from '../components/Spinner'
@@ -12,6 +13,7 @@ export default function RecipeDetailPage() {
   const { recipe, loading, error, retry } = useRecipe(id)
   const { isFavorite, addFavorite, removeFavorite } = useFavorites()
   const { showToast } = useToast()
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
 
   useEffect(() => {
     if (error) showToast('error', error)
@@ -31,8 +33,7 @@ export default function RecipeDetailPage() {
     const fav = isFavorite(recipe.id)
     const toggle = () => {
       if (fav) {
-        removeFavorite(recipe.id)
-        showToast('info', `“${recipe.name}” se quitó de tu recetario`)
+        setConfirmOpen(true)
       } else {
         addFavorite({
           id: recipe.id,
@@ -43,6 +44,11 @@ export default function RecipeDetailPage() {
         })
         showToast('success', `“${recipe.name}” se agregó a tu recetario`)
       }
+    }
+    const confirmRemove = () => {
+      setConfirmOpen(false)
+      removeFavorite(recipe.id)
+      showToast('info', `“${recipe.name}” se quitó de tu recetario`)
     }
     body = (
       <article className="grid gap-8 md:grid-cols-2">
@@ -88,6 +94,14 @@ export default function RecipeDetailPage() {
           <h2 id="instrucciones" className="mb-2 text-xl font-bold">Instrucciones</h2>
           <p className="whitespace-pre-line leading-relaxed">{recipe.instructions}</p>
         </section>
+        <ConfirmDialog
+          open={confirmOpen}
+          title="¿Quitar de tu recetario?"
+          message={`Se quitará “${recipe.name}” de tus favoritos.`}
+          confirmLabel="Sí, quitar"
+          onConfirm={confirmRemove}
+          onCancel={() => setConfirmOpen(false)}
+        />
       </article>
     )
   }

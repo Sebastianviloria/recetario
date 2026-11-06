@@ -1,29 +1,33 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import ConfirmDialog from './ConfirmDialog'
 import { useFavorites } from '../context/favoritesContext'
 import { useToast } from '../context/toastContext'
 import type { FavoriteRecipe } from '../types'
 
 interface Props {
   recipe: FavoriteRecipe
-  /** Si se define, se usa para quitar (p. ej. con confirmación) en lugar de quitar directo. */
-  onRemoveRequest?: (recipe: FavoriteRecipe) => void
 }
 
-export default function RecipeCard({ recipe, onRemoveRequest }: Props) {
+export default function RecipeCard({ recipe }: Props) {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites()
   const { showToast } = useToast()
   const fav = isFavorite(recipe.id)
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
 
   const toggle = () => {
     if (!fav) {
       addFavorite(recipe)
       showToast('success', `“${recipe.name}” se agregó a tu recetario`)
-    } else if (onRemoveRequest) {
-      onRemoveRequest(recipe)
     } else {
-      removeFavorite(recipe.id)
-      showToast('info', `“${recipe.name}” se quitó de tu recetario`)
+      setConfirmOpen(true)
     }
+  }
+
+  const confirmRemove = () => {
+    setConfirmOpen(false)
+    removeFavorite(recipe.id)
+    showToast('info', `“${recipe.name}” se quitó de tu recetario`)
   }
 
   return (
@@ -52,6 +56,14 @@ export default function RecipeCard({ recipe, onRemoveRequest }: Props) {
           </p>
         </div>
       </Link>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="¿Quitar de tu recetario?"
+        message={`Se quitará “${recipe.name}” de tus favoritos.`}
+        confirmLabel="Sí, quitar"
+        onConfirm={confirmRemove}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </article>
   )
 }
